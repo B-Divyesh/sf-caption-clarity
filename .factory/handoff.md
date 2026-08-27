@@ -1,111 +1,108 @@
-# Caption Clarity — handoff
+# Caption Clarity — repair handoff
 
-## Current independent QA status: FAIL
+## Release status: deployed and verified
 
-Candidate `9cffe6773aade0ea2f05b9a4b29cff5d8f446570` was independently verified
-on 2026-08-27 UTC against https://caption-clarity.sociobot.in/.
-
-The repaired caption-player behavior, unit/E2E suites, production build,
-offline reload, update toast, Axe checks, mobile layout, performance budget,
-and live/candidate byte identity all pass. The release remains **FAIL** for
-two P2 deployment-policy defects: all static responses, including content
-hashed assets, have only `Cache-Control: public, must-revalidate, max-age=30`
-rather than long-lived immutable asset caching; and the host lacks
-CSP/Permissions-Policy while serving the manifest as
-`application/octet-stream`. See `.factory/verification-2.md` for exact fresh
-evidence and remediation.
-
-To reproduce the passing source checks after installing the matching browser:
-
-```bash
-npm ci
-npm test
-npm run build
-npx playwright install chromium
-npm run test:e2e
-```
-
-Only this handoff and `.factory/verification-2.md` were changed by the
-verifier; no product source was modified.
-
-## Release status: deployed
-
-Work order: `caption-clarity-repair-1`
+Work order: `caption-clarity-repair-2`
 Completed: 2026-08-27 UTC
+Product deployment: commit `ec56512` to https://caption-clarity.sociobot.in/
+Azure Static Web Apps deployment: `1624a059-9e30-45a9-876b-c0075ca97f8b`
 
-Deployed to `https://caption-clarity.sociobot.in/` as a Standard Azure Static
-Web App from commit `f78be23` (deployment
-`896b09f7-3faa-4645-a393-2b3eaa3432de`).
+The independent verifier's two P2 release blockers from
+`.factory/verification-2.md` are repaired. The deployed player behavior that
+already passed was preserved.
 
-## Repair completed
+## Repair
 
-Fixed the P1 defect reported against candidate
-`72fd58a828d85920ff7430483bd0b92739d640e2`: when **Pause on my terms** is
-enabled, starting playback inside an already-active marked cue now immediately
-pauses the video and reveals **Resume video**. The play transition deliberately
-re-evaluates the visible cue, so a seek/start in the first matching cue follows
-the same rule as a later matching cue.
+- Added `public/staticwebapp.config.json`, which Vite ships at the deploy
+  root. It gives Vite's content-hashed `/assets/*` files
+  `Cache-Control: public, max-age=31536000, immutable`; `sw.js` uses
+  no-cache/no-store revalidation; and the manifest revalidates daily.
+- Moved the two intentionally named, updateable hero images from `/assets/` to
+  `/images/`, so the immutable route contains only content-hashed build
+  output. Their existing short host cache remains correct for files whose
+  names do not change with content.
+- Added a restrictive local-file-PWA CSP, including `frame-ancestors 'none'`,
+  `object-src 'none'`, local Blob media/image support, and the only intentional
+  external connection (`https://api.sociobot.in` for an optional license
+  verification). Added Permissions-Policy, DENY framing, and a
+  `.webmanifest` → `application/manifest+json` mapping.
+- Advanced the service-worker cache name to `caption-clarity-v5` because its
+  precache image paths changed.
 
-Added the exact Chromium regression flow from the verifier report:
+## Regression coverage
 
-1. Load a local moving WebM and a VTT whose first cue includes `fifteen`.
-2. Seek to `00:00.200` inside that first cue.
-3. Enable Pause on my terms and start playback.
-4. Assert that the resume card is visible and that the video is paused.
-
-The service-worker cache version was advanced to `caption-clarity-v4` so an
-already-installed app receives the changed player bundle and presents its
-existing update path.
+- `src/hosting-config.test.ts` asserts immutable hashed asset policy,
+  revalidated app entry points, CSP/frame protection, Permissions-Policy, and
+  manifest MIME mapping (10 unit tests total).
+- The Chromium suite now checks the visible skip-link focus path and the `C`
+  / `E` player shortcuts, as well as the existing exact first/current cue
+  pause regression.
+- The suite now changes only the temporary built `sw.js`, requests a worker
+  update, and asserts the visible **A fresh map is ready** update toast. The
+  original temporary file is restored in `finally`.
+- `PLAYWRIGHT_BASE_URL` permits the same browser assertions to run against a
+  deployed site without changing the default local preview flow.
 
 ## Verification
 
-Clean local install and checks:
-
-- `npm ci` — pass; 0 vulnerabilities reported.
-- `npm test` — pass; 8 unit tests.
-- `npm run build` — pass; TypeScript check and production `dist/` output.
-- `npx playwright install chromium` — completed.
-- `npm run test:e2e` — pass; 4 Chromium flows:
-  - exact first/current matching-cue seek/start pause regression;
-  - local WebM + VTT overlay, emphasis, profile persistence, and export;
-  - Axe WCAG 2 A/AA checks in light, dark, 390 px mobile, privacy, and terms;
-  - service-worker-controlled offline reload.
-- `/opt/fleet/lib/verify-url.sh http://127.0.0.1:4173/ …` against the
-  production preview — pass; HTTP 200, title/lang/one h1/main/image alt
-  checks, and no browser console or page errors.
-- Post-deploy `/opt/fleet/lib/verify-url.sh https://caption-clarity.sociobot.in/ …`
-  — pass; HTTPS 200 and no browser console or page errors.
-- The exact local-WebM/VTT seek/start regression was also replayed against the
-  live URL: the first current matching cue paused immediately, the resume card
-  was visible, and no console errors were emitted.
-- `npx @axe-core/cli` could not launch its separate Selenium Chrome binary in
-  this container; the repository's Playwright Axe integration above ran
-  successfully against Chromium instead.
-
-Production asset sizes remain within the static PWA budget:
-
-- JavaScript: 32.42 KB raw / 11.61 KB gzip (200 KB budget).
-- CSS: 17.73 KB raw / 5.09 KB gzip (50 KB budget).
-- Mobile hero: 58.73 KB WebP (300 KB budget).
-
-## Run and deploy
+Clean install and production checks:
 
 ```bash
 npm ci
-npm test
-npm run build
+npm test                 # pass: 2 files, 10 tests
+npm run build            # pass: TypeScript check and dist/ build
 npx playwright install chromium
-npm run test:e2e
+npm run test:e2e         # pass: 6 Chromium flows, local production preview
 ```
 
-Deployment used `/opt/fleet/lib/deploy-static.sh caption-clarity dist`, which
-provisions/updates the Standard static site and its custom domain.
+Additional completed checks:
 
-## Known gaps / next steps
+- Azure Static Web Apps CLI emulation served the built artifact with the
+  intended cache rules, MIME type, CSP, Permissions-Policy, and framing
+  protection. `verify-url.sh` passed on that configured local server with no
+  console/page errors, title/lang/one-h1/main/alt checks passing.
+- The post-deploy live response has immutable one-year caching on both hashed
+  JS/CSS, revalidates `sw.js`, serves the manifest as
+  `application/manifest+json`, and sends CSP, Permissions-Policy,
+  `X-Frame-Options: DENY`, `Referrer-Policy`, and `nosniff`.
+- `PLAYWRIGHT_BASE_URL=https://caption-clarity.sociobot.in npm run test:e2e --
+  --grep-invert 'announces a waiting service-worker update'` passed all five
+  applicable live Chromium flows: cue pause, local files/profile/export,
+  desktop + 390px Axe scans, keyboard, and controlled offline reload.
+- The local six-flow run includes the safe synthetic worker-update test above.
+  It does not mutate the deployed site.
+- `/opt/fleet/lib/verify-url.sh` passed on the live URL: HTTP 200, title,
+  `lang=en`, one h1, main landmark, image alt attributes, and no browser
+  console/page errors. The helper reports one text-named button inside closed
+  `<details>` as unlabeled; its visible name is **Verify license** and Axe
+  passes.
+- A fresh live browser session requested only
+  `https://caption-clarity.sociobot.in`; no analytics, CDN, remote-font, or
+  third-party runtime request occurred. The optional license endpoint was not
+  contacted.
+- All 16 public application files in `dist/` compared byte-for-byte equal to
+  the deployed custom-domain responses. `staticwebapp.config.json` is consumed
+  by the host rather than exposed as a public application file.
+- Output budget remains well below limits: JS 32.42 KB raw / 11.61 KB gzip;
+  CSS 17.73 KB raw / 5.09 KB gzip; mobile hero 58.73 KB WebP.
 
-- The 25% rewind-reduction success target needs a real comprehension study;
-  the app intentionally has no user analytics.
-- Browser codec support determines local-video compatibility; MP4/H.264 and
-  WebM are recommended.
-- The factory still needs to register a paid product/return URL before a real
-  supporter checkout can complete. Caption functionality is not gated.
+## Known gap
+
+The fresh local Lighthouse CLI attempted in this container crashed its browser
+tab during artifact collection, so it is not claimed as a new clean score.
+The independent verification immediately before this repair recorded live
+mobile Performance 91 and Accessibility 100; this repair did not increase
+bundle or image bytes. All functional, Axe, offline, header, and live-identity
+checks above passed.
+
+## Deployment
+
+The product remains a static Vite PWA. Deploy a fresh build with:
+
+```bash
+npm run build
+/opt/fleet/lib/deploy-static.sh caption-clarity dist
+```
+
+Do not remove `public/staticwebapp.config.json`: it is the response-policy
+contract that repairs the verifier's release blockers.

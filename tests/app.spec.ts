@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { readFile, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
 
 const captions = `WEBVTT
 
@@ -131,4 +133,21 @@ test("reloads the installed shell without a network", async ({ page, context }) 
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Make difficult words rise above the line." })).toBeVisible();
   await context.setOffline(false);
+});
+
+test("announces a waiting service-worker update", async ({ page }) => {
+  const workerPath = resolve(import.meta.dirname, "../dist/sw.js");
+  const originalWorker = await readFile(workerPath, "utf8");
+  try {
+    await page.goto("/");
+    await page.evaluate(() => navigator.serviceWorker.ready);
+    await page.reload();
+    await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+
+    await writeFile(workerPath, `${originalWorker}\n// synthetic update for regression coverage\n`);
+    await page.evaluate(async () => (await navigator.serviceWorker.getRegistration())?.update());
+    await expect(page.locator("#updateToast")).toBeVisible();
+  } finally {
+    await writeFile(workerPath, originalWorker);
+  }
 });
