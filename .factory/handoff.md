@@ -1,9 +1,13 @@
 # Caption Clarity — repair handoff
 
-## Release status: ready for Standard static deployment
+## Release status: deployed
 
 Work order: `caption-clarity-repair-1`
 Completed: 2026-08-27 UTC
+
+Deployed to `https://caption-clarity.sociobot.in/` as a Standard Azure Static
+Web App from commit `f78be23` (deployment
+`896b09f7-3faa-4645-a393-2b3eaa3432de`).
 
 ## Repair completed
 
@@ -41,6 +45,11 @@ Clean local install and checks:
 - `/opt/fleet/lib/verify-url.sh http://127.0.0.1:4173/ …` against the
   production preview — pass; HTTP 200, title/lang/one h1/main/image alt
   checks, and no browser console or page errors.
+- Post-deploy `/opt/fleet/lib/verify-url.sh https://caption-clarity.sociobot.in/ …`
+  — pass; HTTPS 200 and no browser console or page errors.
+- The exact local-WebM/VTT seek/start regression was also replayed against the
+  live URL: the first current matching cue paused immediately, the resume card
+  was visible, and no console errors were emitted.
 - `npx @axe-core/cli` could not launch its separate Selenium Chrome binary in
   this container; the repository's Playwright Axe integration above ran
   successfully against Chromium instead.
@@ -61,8 +70,8 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Deploy `dist/` through the factory Standard static deployment path for
-`caption-clarity`.
+Deployment used `/opt/fleet/lib/deploy-static.sh caption-clarity dist`, which
+provisions/updates the Standard static site and its custom domain.
 
 ## Known gaps / next steps
 
