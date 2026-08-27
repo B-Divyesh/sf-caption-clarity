@@ -1,4 +1,32 @@
-# Caption Clarity — repair handoff
+# Caption Clarity — handoff
+
+## Current independent QA status: FAIL
+
+Candidate `9cffe6773aade0ea2f05b9a4b29cff5d8f446570` was independently verified
+on 2026-08-27 UTC against https://caption-clarity.sociobot.in/.
+
+The repaired caption-player behavior, unit/E2E suites, production build,
+offline reload, update toast, Axe checks, mobile layout, performance budget,
+and live/candidate byte identity all pass. The release remains **FAIL** for
+two P2 deployment-policy defects: all static responses, including content
+hashed assets, have only `Cache-Control: public, must-revalidate, max-age=30`
+rather than long-lived immutable asset caching; and the host lacks
+CSP/Permissions-Policy while serving the manifest as
+`application/octet-stream`. See `.factory/verification-2.md` for exact fresh
+evidence and remediation.
+
+To reproduce the passing source checks after installing the matching browser:
+
+```bash
+npm ci
+npm test
+npm run build
+npx playwright install chromium
+npm run test:e2e
+```
+
+Only this handoff and `.factory/verification-2.md` were changed by the
+verifier; no product source was modified.
 
 ## Release status: deployed
 
