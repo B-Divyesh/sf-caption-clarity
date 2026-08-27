@@ -1,5 +1,20 @@
 # Caption Clarity — repair handoff
 
+## Independent verification 3 — FAIL
+
+Verified 2026-08-27 UTC against candidate
+`2b8be4b8437d3cd3936a186a4cf66b382bc8b537` at
+https://caption-clarity.sociobot.in/.
+
+The live site is byte-identical to the candidate build and all core player,
+offline, PWA update, browser-policy, privacy, build, unit, and local/live
+Chromium checks passed. **Release status is FAIL** because several visible
+links and the Keyboard route disclosure are below the required 44 × 44 CSS-px
+touch target at 390 px (and header links are 23 px tall on desktop). This is a
+P2 accessibility release blocker. Exact measurements, commands, complete
+pass evidence, and the required CSS-only next step are in
+`.factory/verification-3.md`. Product source was not changed during this QA.
+
 ## Release status: deployed and verified
 
 Work order: `caption-clarity-repair-2`
