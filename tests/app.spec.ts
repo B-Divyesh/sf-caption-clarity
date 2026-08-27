@@ -84,6 +84,20 @@ test("loads local captions, shapes a cue, and persists a profile", async ({ page
   expect(errors).toEqual([]);
 });
 
+test("keeps the skip link and caption shortcuts keyboard operable", async ({ page }) => {
+  await page.goto("/");
+  await page.keyboard.press("Tab");
+  await expect(page.locator(".skip-link")).toBeFocused();
+
+  await page.locator("#captionInput").setInputFiles({ name: "dialogue.vtt", mimeType: "text/vtt", buffer: Buffer.from(captions) });
+  await loadMovingLocalVideo(page);
+  await page.locator("#video").focus();
+  await page.keyboard.press("KeyC");
+  await expect(page.locator("#captionsToggle")).toHaveAttribute("aria-pressed", "false");
+  await page.keyboard.press("KeyE");
+  await expect(page.locator("#emphasis")).toHaveValue("more");
+});
+
 test("meets automated accessibility checks in light, dark, mobile, and legal views", async ({ page }) => {
   await page.goto("/");
   let result = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();

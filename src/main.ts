@@ -97,8 +97,8 @@ function homeTemplate(): string {
         </div>
         <figure class="hero-art">
           <picture>
-            <source media="(max-width: 700px)" srcset="/assets/terrain-listening-768.webp" />
-            <img src="/assets/terrain-listening-1200.webp" width="1200" height="800" alt="A paper topographic map where blank caption tiles rise on contour peaks along a red route." fetchpriority="high" decoding="async" />
+            <source media="(max-width: 700px)" srcset="/images/terrain-listening-768.webp" />
+            <img src="/images/terrain-listening-1200.webp" width="1200" height="800" alt="A paper topographic map where blank caption tiles rise on contour peaks along a red route." fetchpriority="high" decoding="async" />
           </picture>
           <figcaption><span>Fig. 01</span> Emphasis turns a flat transcript into a personal reading map.</figcaption>
         </figure>

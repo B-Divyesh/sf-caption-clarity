@@ -1,4 +1,4 @@
-const VERSION = "caption-clarity-v4";
+const VERSION = "caption-clarity-v5";
 const SHELL = `${VERSION}-shell`;
 const RUNTIME = `${VERSION}-runtime`;
 const APP_SHELL = [
@@ -12,8 +12,8 @@ const APP_SHELL = [
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/icon-maskable-512.png",
-  "/assets/terrain-listening-768.webp",
-  "/assets/terrain-listening-1200.webp"
+  "/images/terrain-listening-768.webp",
+  "/images/terrain-listening-1200.webp"
 ];
 
 self.addEventListener("install", (event) => {

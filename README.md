@@ -58,6 +58,6 @@ Deploy the contents of `dist/` as a static site with clean URL fallback/director
 
 ## Source and artwork
 
-The visual system and image provenance are documented in [`.factory/design.md`](.factory/design.md). The original topographic artwork and prompt sidecars are in `assets/src/`; optimized WebP assets are in `public/assets/`.
+The visual system and image provenance are documented in [`.factory/design.md`](.factory/design.md). The original topographic artwork and prompt sidecars are in `assets/src/`; optimized WebP assets are in `public/images/`.
 
 Released under the [MIT License](LICENSE).
