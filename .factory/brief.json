@@ -1,0 +1,11 @@
+{
+  "slug": "caption-clarity",
+  "title": "Caption Clarity",
+  "territory": "utilities",
+  "user": "People with high-frequency hearing loss who need captions styled around likely-to-be-misheard dialogue rather than one undifferentiated text stream.",
+  "smallest_useful_product": "A local WebVTT/SRT player and standards-compliant video overlay with profiles for emphasis, line length, pause-on-keyword, and user-defined confusing terms.",
+  "success_measure": "In a 30-minute comprehension test with supplied clips, profile users rewind at least 25% less than with ordinary captions.",
+  "artifact_class": "pwa-offline",
+  "monetization": "one-time",
+  "constraints": "No media hosting or DRM bypass; preserve copyright by accepting only local/user-authorized media; make all profiles adjustable rather than implying medical recommendations."
+}
