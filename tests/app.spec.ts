@@ -1,0 +1,95 @@
+import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+
+const captions = `WEBVTT
+
+00:00:00.000 --> 00:00:00.900
+We meet at fifteen, not fifty.
+
+00:00:00.900 --> 00:00:02.000
+Take the first turning.`;
+
+test("loads local captions, shapes a cue, and persists a profile", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: "Make difficult words rise above the line." })).toBeVisible();
+
+  await page.locator("#captionInput").setInputFiles({ name: "dialogue.vtt", mimeType: "text/vtt", buffer: Buffer.from(captions) });
+  await expect(page.locator("#captionStatus")).toContainText("2 cues");
+
+  await page.evaluate(async () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 320; canvas.height = 180;
+    const context = canvas.getContext("2d")!;
+    context.fillStyle = "#17342f"; context.fillRect(0, 0, 320, 180);
+    const stream = canvas.captureStream(10);
+    const recorder = new MediaRecorder(stream, { mimeType: "video/webm;codecs=vp8" });
+    const chunks: BlobPart[] = [];
+    recorder.ondataavailable = (event) => chunks.push(event.data);
+    recorder.start();
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    await new Promise<void>((resolve) => { recorder.onstop = () => resolve(); recorder.stop(); });
+    stream.getTracks().forEach((track) => track.stop());
+    const file = new File(chunks, "local-clip.webm", { type: "video/webm" });
+    const transfer = new DataTransfer(); transfer.items.add(file);
+    const input = document.querySelector<HTMLInputElement>("#videoInput")!;
+    input.files = transfer.files; input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await expect(page.locator("#videoStatus")).toContainText("local-clip.webm");
+  await page.locator("#video").evaluate(async (video: HTMLVideoElement) => {
+    if (video.readyState < 1) await new Promise((resolve) => video.addEventListener("loadedmetadata", resolve, { once: true }));
+    video.currentTime = 0.2;
+    video.dispatchEvent(new Event("seeked"));
+  });
+  await expect(page.locator("#captionLayer")).toContainText("fifteen");
+  await expect(page.locator("#captionLayer .caption-emphasis")).not.toHaveCount(0);
+
+  await page.locator("#profileName").fill("Evening films");
+  await page.locator("#lineLength").fill("34");
+  await page.getByRole("button", { name: "Save profile" }).click();
+  await expect(page.locator("#saveState")).toHaveText("Saved locally");
+  await page.reload();
+  await expect(page.locator("#profileName")).toHaveValue("Evening films");
+
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export JSON" }).click();
+  expect((await download).suggestedFilename()).toMatch(/^caption-clarity-profiles-/);
+  expect(errors).toEqual([]);
+});
+
+test("meets automated accessibility checks in light, dark, mobile, and legal views", async ({ page }) => {
+  await page.goto("/");
+  let result = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+  expect(result.violations).toEqual([]);
+
+  await page.locator("#themeToggle").click();
+  result = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+  expect(result.violations).toEqual([]);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  const dimensions = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, viewport: innerWidth }));
+  expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.viewport);
+  result = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+  expect(result.violations).toEqual([]);
+
+  for (const path of ["/privacy/", "/terms/"]) {
+    await page.goto(path);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+    result = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+    expect(result.violations).toEqual([]);
+  }
+});
+
+test("reloads the installed shell without a network", async ({ page, context }) => {
+  await page.goto("/");
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.reload();
+  await expect(page.locator("#workspaceTitle")).toBeVisible();
+  await context.setOffline(true);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "Make difficult words rise above the line." })).toBeVisible();
+  await context.setOffline(false);
+});
