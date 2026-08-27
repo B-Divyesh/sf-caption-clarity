@@ -15,7 +15,7 @@ The light treatment is a sun-warmed paper map and the dark treatment is a night 
 | ink / text | `#172421` | `#f4f1e6` | primary copy |
 | muted | `#58645f` | `#aebbb5` | secondary copy |
 | contour | `#b9c4ad` | `#3f5650` | rules and topography |
-| route / accent | `#c9462d` | `#ff7a5c` | primary action and emphasis |
+| route / accent | `#ad3824` | `#ff7a5c` | primary action and emphasis |
 | route contrast | `#ffffff` | `#17201e` | text on route |
 | water | `#176b75` | `#70c5c9` | links and focus |
 | success | `#2f6b47` | `#78c692` | loaded/verified |

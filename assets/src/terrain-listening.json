@@ -1,0 +1,9 @@
+{
+  "tool": "/opt/fleet/lib/gen-image.sh",
+  "model": "factory-image",
+  "date": "2026-08-27",
+  "size": "1536x1024",
+  "quality": "high",
+  "prompt": "An abstract listening landscape where topographic contour ridges gently lift selected blank caption-like paper tiles above a flat path. Precise field cartography on warm archival paper; tactile editorial still life, layered cut paper, blind embossing, fine ink contour lines; wide elevated orthographic composition; quiet raking morning light; lichen, warm paper, charcoal, oxidized teal and restrained vermilion. No people, ears, hearing aids, screens, UI, text, letters, logos, brands, medical imagery, glossy gradients, watermark, photorealistic scenery or clutter.",
+  "review": "Selected first candidate: clean blank tiles, coherent contour construction, no text artifacts, brands, people, or unintended symbols."
+}

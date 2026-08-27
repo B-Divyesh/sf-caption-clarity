@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Caption Clarity contour mark">
+  <rect width="512" height="512" rx="112" fill="#172421"/>
+  <g fill="none" stroke="#b9c4ad" stroke-width="15">
+    <ellipse cx="256" cy="235" rx="177" ry="129"/>
+    <ellipse cx="256" cy="235" rx="138" ry="96"/>
+    <ellipse cx="256" cy="235" rx="98" ry="63"/>
+  </g>
+  <path fill="#f2efe4" d="M116 190h280v107H241l-71 55 14-55h-68z"/>
+  <path fill="#c9462d" d="M205 225h126v35H205z"/>
+</svg>
