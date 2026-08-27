@@ -9,16 +9,7 @@ We meet at fifteen, not fifty.
 00:00:00.900 --> 00:00:02.000
 Take the first turning.`;
 
-test("loads local captions, shapes a cue, and persists a profile", async ({ page }) => {
-  const errors: string[] = [];
-  page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
-  await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
-  await expect(page.getByRole("heading", { name: "Make difficult words rise above the line." })).toBeVisible();
-
-  await page.locator("#captionInput").setInputFiles({ name: "dialogue.vtt", mimeType: "text/vtt", buffer: Buffer.from(captions) });
-  await expect(page.locator("#captionStatus")).toContainText("2 cues");
-
+async function loadMovingLocalVideo(page: import("@playwright/test").Page): Promise<void> {
   await page.evaluate(async () => {
     const canvas = document.createElement("canvas");
     canvas.width = 320; canvas.height = 180;
@@ -38,6 +29,40 @@ test("loads local captions, shapes a cue, and persists a profile", async ({ page
     input.files = transfer.files; input.dispatchEvent(new Event("change", { bubbles: true }));
   });
   await expect(page.locator("#videoStatus")).toContainText("local-clip.webm");
+}
+
+test("pauses when playback starts inside the current first cue with a saved term", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#captionInput").setInputFiles({ name: "dialogue.vtt", mimeType: "text/vtt", buffer: Buffer.from(captions) });
+  await loadMovingLocalVideo(page);
+
+  await page.locator("#video").evaluate(async (video: HTMLVideoElement) => {
+    if (video.readyState < 1) await new Promise((resolve) => video.addEventListener("loadedmetadata", resolve, { once: true }));
+    video.currentTime = 0.2;
+    video.dispatchEvent(new Event("seeked"));
+  });
+  await expect(page.locator("#captionLayer")).toContainText("fifteen");
+  await expect(page.locator("#pauseCard")).toBeHidden();
+  await page.locator("#pauseOnTerm").check();
+
+  // The expected immediate pause rejects the native play promise; the visible
+  // player state below is the product assertion.
+  await page.locator("#video").evaluate((video: HTMLVideoElement) => video.play().catch(() => undefined));
+  await expect(page.locator("#pauseCard")).toBeVisible();
+  await expect.poll(() => page.locator("#video").evaluate((video: HTMLVideoElement) => video.paused)).toBe(true);
+});
+
+test("loads local captions, shapes a cue, and persists a profile", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: "Make difficult words rise above the line." })).toBeVisible();
+
+  await page.locator("#captionInput").setInputFiles({ name: "dialogue.vtt", mimeType: "text/vtt", buffer: Buffer.from(captions) });
+  await expect(page.locator("#captionStatus")).toContainText("2 cues");
+
+  await loadMovingLocalVideo(page);
   await page.locator("#video").evaluate(async (video: HTMLVideoElement) => {
     if (video.readyState < 1) await new Promise((resolve) => video.addEventListener("loadedmetadata", resolve, { once: true }));
     video.currentTime = 0.2;

@@ -1,4 +1,4 @@
-const VERSION = "caption-clarity-v3";
+const VERSION = "caption-clarity-v4";
 const SHELL = `${VERSION}-shell`;
 const RUNTIME = `${VERSION}-runtime`;
 const APP_SHELL = [

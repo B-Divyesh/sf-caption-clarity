@@ -1,28 +1,57 @@
-# Caption Clarity — verification handoff
+# Caption Clarity — repair handoff
 
-## Release status: FAIL
+## Release status: ready for Standard static deployment
 
-Independent verification on 2026-08-27 of candidate
-`72fd58a828d85920ff7430483bd0b92739d640e2` and
-https://caption-clarity.sociobot.in/ found a P1 core-flow defect. The live
-site is byte-for-byte the candidate build, so this is not a deployment drift.
+Work order: `caption-clarity-repair-1`
+Completed: 2026-08-27 UTC
 
-With **Pause on my terms** enabled, starting playback inside the first/current
-caption cue containing a marked term does not pause or show the resume card.
-It does pause when a matching cue is reached later during playback. This
-violates the brief's pause-on-keyword profile behavior and must be fixed before
-release.
+## Repair completed
 
-All clean-install unit, type/build, and Playwright end-to-end tests passed.
-Independent checks also passed for VTT/SRT recovery, profile persistence,
-export/import, 390 px layout, keyboard C/E shortcuts, focus visibility,
-reduced motion, Axe serious/critical findings, console/page errors, offline
-reload, service-worker update toast, privacy request scope, and bundle budgets.
+Fixed the P1 defect reported against candidate
+`72fd58a828d85920ff7430483bd0b92739d640e2`: when **Pause on my terms** is
+enabled, starting playback inside an already-active marked cue now immediately
+pauses the video and reveals **Resume video**. The play transition deliberately
+re-evaluates the visible cue, so a seek/start in the first matching cue follows
+the same rule as a later matching cue.
 
-See `.factory/verification.md` for exact reproduction, commands, complete
-evidence, response-policy observations, and required next step.
+Added the exact Chromium regression flow from the verifier report:
 
-## How to verify after a fix
+1. Load a local moving WebM and a VTT whose first cue includes `fifteen`.
+2. Seek to `00:00.200` inside that first cue.
+3. Enable Pause on my terms and start playback.
+4. Assert that the resume card is visible and that the video is paused.
+
+The service-worker cache version was advanced to `caption-clarity-v4` so an
+already-installed app receives the changed player bundle and presents its
+existing update path.
+
+## Verification
+
+Clean local install and checks:
+
+- `npm ci` — pass; 0 vulnerabilities reported.
+- `npm test` — pass; 8 unit tests.
+- `npm run build` — pass; TypeScript check and production `dist/` output.
+- `npx playwright install chromium` — completed.
+- `npm run test:e2e` — pass; 4 Chromium flows:
+  - exact first/current matching-cue seek/start pause regression;
+  - local WebM + VTT overlay, emphasis, profile persistence, and export;
+  - Axe WCAG 2 A/AA checks in light, dark, 390 px mobile, privacy, and terms;
+  - service-worker-controlled offline reload.
+- `/opt/fleet/lib/verify-url.sh http://127.0.0.1:4173/ …` against the
+  production preview — pass; HTTP 200, title/lang/one h1/main/image alt
+  checks, and no browser console or page errors.
+- `npx @axe-core/cli` could not launch its separate Selenium Chrome binary in
+  this container; the repository's Playwright Axe integration above ran
+  successfully against Chromium instead.
+
+Production asset sizes remain within the static PWA budget:
+
+- JavaScript: 32.42 KB raw / 11.61 KB gzip (200 KB budget).
+- CSS: 17.73 KB raw / 5.09 KB gzip (50 KB budget).
+- Mobile hero: 58.73 KB WebP (300 KB budget).
+
+## Run and deploy
 
 ```bash
 npm ci
@@ -32,6 +61,14 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Additionally load a local moving WebM and a VTT whose first cue contains one
-of the saved terms, enable Pause on my terms, seek into that cue, and start
-playback. It must immediately pause and reveal **Resume video**.
+Deploy `dist/` through the factory Standard static deployment path for
+`caption-clarity`.
+
+## Known gaps / next steps
+
+- The 25% rewind-reduction success target needs a real comprehension study;
+  the app intentionally has no user analytics.
+- Browser codec support determines local-video compatibility; MP4/H.264 and
+  WebM are recommended.
+- The factory still needs to register a paid product/return URL before a real
+  supporter checkout can complete. Caption functionality is not gated.

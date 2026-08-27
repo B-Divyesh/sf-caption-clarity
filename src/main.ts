@@ -401,7 +401,15 @@ async function setupHome(): Promise<void> {
     if (!videoFile && !captionFile) showError("No supported video, VTT, or SRT file was found in that drop.");
   });
 
-  video.addEventListener("play", () => { pauseCard.hidden = true; cancelAnimationFrame(animationFrame); tick(); });
+  video.addEventListener("play", () => {
+    pauseCard.hidden = true;
+    cancelAnimationFrame(animationFrame);
+    // A seek can render the current cue before playback starts. Re-render on
+    // play so a marked first/current cue receives the same pause check as a
+    // cue reached while playback is already running.
+    renderCaption(true);
+    if (!video.paused && !video.ended) tick();
+  });
   video.addEventListener("pause", () => renderCaption());
   video.addEventListener("seeked", () => renderCaption(true));
   video.addEventListener("loadedmetadata", () => { clearError(); });
