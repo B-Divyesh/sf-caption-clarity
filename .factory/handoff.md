@@ -7,6 +7,7 @@ Independent verification completed 2026-08-28 UTC.
 - Tested commit: `4511c147195b8436c43b8906b002ebca4c65dd53`
 - Live URL: <https://caption-clarity.sociobot.in/>
 - Full evidence: [.factory/verification-5.md](verification-5.md)
+- Additional fresh verifier evidence: [.factory/verification-4.md](verification-4.md)
 
 ## What was verified
 
