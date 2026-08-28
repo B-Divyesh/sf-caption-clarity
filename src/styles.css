@@ -77,9 +77,12 @@ button { cursor: pointer; }
 .lede { max-width: 58ch; font-size: clamp(1.08rem, 1.8vw, 1.25rem); line-height: 1.55; color: var(--muted); }
 
 .site-header { display: flex; position: relative; z-index: 5; align-items: center; justify-content: space-between; gap: 24px; max-width: var(--max); min-height: 80px; margin: 0 auto; padding: 16px clamp(20px, 4vw, 64px); border-bottom: 1px solid var(--contour); }
-.brand { display: inline-flex; align-items: center; gap: 11px; color: var(--ink); font-weight: 800; text-decoration: none; letter-spacing: -.02em; }
+.brand { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; gap: 11px; color: var(--ink); font-weight: 800; text-decoration: none; letter-spacing: -.02em; }
 .brand img { border-radius: 9px; }
 .site-header nav, .site-footer nav { display: flex; align-items: center; gap: clamp(12px, 2.3vw, 30px); }
+.site-header nav a, .site-footer nav a, .license-panel .small a, .legal-page .small a {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px;
+}
 .site-header nav a { color: var(--ink); font-size: .92rem; font-weight: 700; text-decoration: none; }
 .quiet, .text-button { padding: 8px 4px; border: 0; background: transparent; color: var(--water); font-weight: 800; }
 .icon-button { display: inline-flex; align-items: center; gap: 7px; }
@@ -141,7 +144,7 @@ kbd { padding: 2px 5px; border: 1px solid currentColor; border-radius: 3px; font
 .player-readout { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; color: var(--muted); }
 .player-readout p { margin: 0; }
 .shortcut-help { margin-top: 14px; color: var(--muted); font-size: .9rem; }
-.shortcut-help summary { width: fit-content; color: var(--water); font-weight: 800; cursor: pointer; }
+.shortcut-help summary { width: fit-content; min-width: 44px; min-height: 44px; padding: 10px 4px; color: var(--water); font-weight: 800; cursor: pointer; }
 .shortcut-help p { margin-top: 8px; }
 
 .control-bench { padding: clamp(22px, 3vw, 32px); border: 1px solid var(--contour-strong); background: var(--sheet); box-shadow: var(--shadow); }

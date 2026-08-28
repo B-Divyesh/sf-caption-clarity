@@ -11,6 +11,18 @@ We meet at fifteen, not fifty.
 00:00:00.900 --> 00:00:02.000
 Take the first turning.`;
 
+async function expectTouchTargets(page: import("@playwright/test").Page, selector: string): Promise<void> {
+  const measurements = await page.locator(selector).evaluateAll((targets) => targets.map((target) => {
+    const box = target.getBoundingClientRect();
+    return { label: target.textContent?.trim() || target.getAttribute("aria-label") || selector, width: box.width, height: box.height };
+  }));
+  expect(measurements, `${selector} should match at least one visible target`).not.toHaveLength(0);
+  for (const measurement of measurements) {
+    expect(measurement.width, `${measurement.label} width`).toBeGreaterThanOrEqual(44);
+    expect(measurement.height, `${measurement.label} height`).toBeGreaterThanOrEqual(44);
+  }
+}
+
 async function loadMovingLocalVideo(page: import("@playwright/test").Page): Promise<void> {
   await page.evaluate(async () => {
     const canvas = document.createElement("canvas");
@@ -98,6 +110,21 @@ test("keeps the skip link and caption shortcuts keyboard operable", async ({ pag
   await expect(page.locator("#captionsToggle")).toHaveAttribute("aria-pressed", "false");
   await page.keyboard.press("KeyE");
   await expect(page.locator("#emphasis")).toHaveValue("more");
+});
+
+test("keeps reported navigation, disclosure, and legal targets at least 44px", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await expectTouchTargets(page, ".brand, .shortcut-help summary, .site-footer nav a, .license-panel .small a");
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.reload();
+  await expectTouchTargets(page, ".brand, .site-header nav a, .site-footer nav a, .shortcut-help summary, .license-panel .small a");
+
+  for (const path of ["/privacy/", "/terms/"]) {
+    await page.goto(path);
+    await expectTouchTargets(page, ".site-footer nav a, .legal-page .small a");
+  }
 });
 
 test("meets automated accessibility checks in light, dark, mobile, and legal views", async ({ page }) => {
