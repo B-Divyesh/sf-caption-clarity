@@ -1,123 +1,126 @@
 # Caption Clarity — repair handoff
 
-## Independent verification 3 — FAIL
+## Release status: PASS
 
-Verified 2026-08-27 UTC against candidate
-`2b8be4b8437d3cd3936a186a4cf66b382bc8b537` at
-https://caption-clarity.sociobot.in/.
-
-The live site is byte-identical to the candidate build and all core player,
-offline, PWA update, browser-policy, privacy, build, unit, and local/live
-Chromium checks passed. **Release status is FAIL** because several visible
-links and the Keyboard route disclosure are below the required 44 × 44 CSS-px
-touch target at 390 px (and header links are 23 px tall on desktop). This is a
-P2 accessibility release blocker. Exact measurements, commands, complete
-pass evidence, and the required CSS-only next step are in
-`.factory/verification-3.md`. Product source was not changed during this QA.
-
-## Release status: deployed and verified
-
-Work order: `caption-clarity-repair-2`
-Completed: 2026-08-27 UTC
-Product deployment: commit `ec56512` to https://caption-clarity.sociobot.in/
-Azure Static Web Apps deployment: `1624a059-9e30-45a9-876b-c0075ca97f8b`
-
-The independent verifier's two P2 release blockers from
-`.factory/verification-2.md` are repaired. The deployed player behavior that
-already passed was preserved.
+Work order: `caption-clarity-repair-3`
+Verifier report: `.factory/verification-3.md`, report commit
+`e83784c57dcb99f92652bf0d7292be4db85a5176`
+Repaired candidate base: `2b8be4b8437d3cd3936a186a4cf66b382bc8b537`
+Repair commit: `72e9bec` (`fix: meet touch target size requirements`)
+Completed: 2026-08-28 UTC
 
 ## Repair
 
-- Added `public/staticwebapp.config.json`, which Vite ships at the deploy
-  root. It gives Vite's content-hashed `/assets/*` files
-  `Cache-Control: public, max-age=31536000, immutable`; `sw.js` uses
-  no-cache/no-store revalidation; and the manifest revalidates daily.
-- Moved the two intentionally named, updateable hero images from `/assets/` to
-  `/images/`, so the immutable route contains only content-hashed build
-  output. Their existing short host cache remains correct for files whose
-  names do not change with content.
-- Added a restrictive local-file-PWA CSP, including `frame-ancestors 'none'`,
-  `object-src 'none'`, local Blob media/image support, and the only intentional
-  external connection (`https://api.sociobot.in` for an optional license
-  verification). Added Permissions-Policy, DENY framing, and a
-  `.webmanifest` → `application/manifest+json` mapping.
-- Advanced the service-worker cache name to `caption-clarity-v5` because its
-  precache image paths changed.
+The verifier found one P2 release blocker: several visible links and the
+Keyboard route disclosure had boxes smaller than the required 44 × 44 CSS px.
+
+- The home brand, desktop header links, footer legal links, supporter-panel
+  legal links, and legal-page contact links now have centered 44 px minimum
+  inline and block hit areas.
+- The Keyboard route `<summary>` now has a 44 px minimum hit box while
+  retaining its native disclosure behavior and focus styling.
+- No player, caption parsing, profile, privacy, PWA, or deployment-policy
+  behavior changed.
 
 ## Regression coverage
 
-- `src/hosting-config.test.ts` asserts immutable hashed asset policy,
-  revalidated app entry points, CSP/frame protection, Permissions-Policy, and
-  manifest MIME mapping (10 unit tests total).
-- The Chromium suite now checks the visible skip-link focus path and the `C`
-  / `E` player shortcuts, as well as the existing exact first/current cue
-  pause regression.
-- The suite now changes only the temporary built `sw.js`, requests a worker
-  update, and asserts the visible **A fresh map is ready** update toast. The
-  original temporary file is restored in `finally`.
-- `PLAYWRIGHT_BASE_URL` permits the same browser assertions to run against a
-  deployed site without changing the default local preview flow.
+`tests/app.spec.ts` now has a browser regression that measures every reported
+target at 390 × 844 and 1440 × 900, plus the legal-page contact links. It
+fails if either dimension is below 44 px. The existing keyboard, Axe, local
+media, persistence, offline, and service-worker update flows remain covered.
+
+Live 390 px measurements after deployment:
+
+| Target | Width × height |
+| --- | --- |
+| Caption Clarity home | 146.89 × 44 px |
+| Keyboard route | 129.61 × 44 px |
+| Footer Privacy / Terms | 51.23 × 44 / 44 × 44 px |
+| Supporter Privacy / Terms | 52.45 × 44 / 44 × 44 px |
+
+At desktop, Player is 44.20 × 44 px and Supporter is 70.33 × 44 px.
 
 ## Verification
 
-Clean install and production checks:
+Clean install and production checks completed successfully:
 
 ```bash
-npm ci
-npm test                 # pass: 2 files, 10 tests
-npm run build            # pass: TypeScript check and dist/ build
-npx playwright install chromium
-npm run test:e2e         # pass: 6 Chromium flows, local production preview
+npm ci                    # 55 packages; 0 vulnerabilities
+npm test                  # 2 files, 10 tests passed
+npm run build             # tsc --noEmit and Vite production build passed
+npm run test:e2e          # 7 local Chromium flows passed
 ```
 
-Additional completed checks:
+`npm run build` produced `dist/` with 32.42 KB raw / 11.61 KB gzip JavaScript
+and 18.01 KB raw / 5.13 KB gzip CSS. There is no package-consumer check for
+this static Vite PWA, and no separate lint command; type checking is part of
+the build.
 
-- Azure Static Web Apps CLI emulation served the built artifact with the
-  intended cache rules, MIME type, CSP, Permissions-Policy, and framing
-  protection. `verify-url.sh` passed on that configured local server with no
-  console/page errors, title/lang/one-h1/main/alt checks passing.
-- The post-deploy live response has immutable one-year caching on both hashed
-  JS/CSS, revalidates `sw.js`, serves the manifest as
-  `application/manifest+json`, and sends CSP, Permissions-Policy,
-  `X-Frame-Options: DENY`, `Referrer-Policy`, and `nosniff`.
-- `PLAYWRIGHT_BASE_URL=https://caption-clarity.sociobot.in npm run test:e2e --
-  --grep-invert 'announces a waiting service-worker update'` passed all five
-  applicable live Chromium flows: cue pause, local files/profile/export,
-  desktop + 390px Axe scans, keyboard, and controlled offline reload.
-- The local six-flow run includes the safe synthetic worker-update test above.
-  It does not mutate the deployed site.
-- `/opt/fleet/lib/verify-url.sh` passed on the live URL: HTTP 200, title,
-  `lang=en`, one h1, main landmark, image alt attributes, and no browser
-  console/page errors. The helper reports one text-named button inside closed
-  `<details>` as unlabeled; its visible name is **Verify license** and Axe
-  passes.
-- A fresh live browser session requested only
-  `https://caption-clarity.sociobot.in`; no analytics, CDN, remote-font, or
-  third-party runtime request occurred. The optional license endpoint was not
-  contacted.
-- All 16 public application files in `dist/` compared byte-for-byte equal to
-  the deployed custom-domain responses. `staticwebapp.config.json` is consumed
-  by the host rather than exposed as a public application file.
-- Output budget remains well below limits: JS 32.42 KB raw / 11.61 KB gzip;
-  CSS 17.73 KB raw / 5.09 KB gzip; mobile hero 58.73 KB WebP.
+Browser and accessibility checks:
 
-## Known gap
+- Local production preview was visually reviewed at 1440 px desktop and
+  390 × 844 mobile; the mobile layout has no horizontal overflow.
+- Axe WCAG 2 A/AA checks passed with zero violations in light, dark, mobile,
+  privacy, and terms views. Keyboard coverage confirms the visible skip link
+  and `C`/`E` player shortcuts; the new regression covers all repaired targets.
+- `/opt/fleet/lib/verify-url.sh` passed locally and live: HTTP 200, no console
+  or page errors, title, `lang=en`, one `h1`, main landmark, and image alt
+  attributes all present. Its simple text scraper reports one unlabeled button
+  inside a closed `<details>`; that button has visible text (**Verify license**)
+  when expanded and Axe/Lighthouse both report accessible button names.
+- A fresh mobile Lighthouse run produced Performance **94**, Accessibility
+  **100**, FCP **0.9 s**, LCP **1.7 s**, TBT **280 ms**, and CLS **0**. The CLI
+  returned a Chromium `TARGET_CRASHED` warning during its final full-page
+  artifact/BFCache collection after producing the report, so that invocation
+  is recorded transparently rather than presented as a clean CLI exit.
 
-The fresh local Lighthouse CLI attempted in this container crashed its browser
-tab during artifact collection, so it is not claimed as a new clean score.
-The independent verification immediately before this repair recorded live
-mobile Performance 91 and Accessibility 100; this repair did not increase
-bundle or image bytes. All functional, Axe, offline, header, and live-identity
-checks above passed.
+Privacy, PWA, and policy checks:
+
+- A browser privacy smoke test created the app's IndexedDB and local-storage
+  keys, used **Clear saved data on this device**, and confirmed both were gone.
+- Local Chromium passed controlled offline reload and the safe synthetic
+  waiting-service-worker update test. The deployed-site suite passed the
+  applicable offline reload; the update simulation remains local-only so it
+  never mutates production.
+- A fresh live session requested only the Caption Clarity origin (root, local
+  JS/CSS, icon, and hero image): no analytics, CDN, remote font, or third-party
+  runtime request. The optional license endpoint was not contacted.
+- Live response policy was verified: CSP includes `frame-ancestors 'none'`
+  and `object-src 'none'`; Permissions-Policy, `X-Frame-Options: DENY`,
+  `nosniff`, and Referrer-Policy are present. `sw.js` is no-cache/no-store,
+  the manifest is `application/manifest+json` and daily-revalidated, and
+  hashed assets are one-year immutable.
+- All 16 public application files in the fresh `dist/` output were compared
+  byte-for-byte with the custom-domain responses. `staticwebapp.config.json`
+  is host-consumed configuration and intentionally excluded from that public
+  file comparison.
+
+Live Chromium verification:
+
+```bash
+PLAYWRIGHT_BASE_URL=https://caption-clarity.sociobot.in \
+  npm run test:e2e -- --grep-invert 'announces a waiting service-worker update'
+# 6 applicable flows passed
+```
 
 ## Deployment
 
-The product remains a static Vite PWA. Deploy a fresh build with:
+Artifact class remains `pwa-offline`; deployment remains static Vite output.
+
+- Azure Static Web Apps deployment: `a7a48ba2-aeb3-46e3-8f63-523d9ed9e2ef`
+- Static host: `https://brave-smoke-0f9d96c0f.7.azurestaticapps.net`
+- Public URL: https://caption-clarity.sociobot.in/
+
+For a subsequent deployment:
 
 ```bash
 npm run build
 /opt/fleet/lib/deploy-static.sh caption-clarity dist
 ```
 
-Do not remove `public/staticwebapp.config.json`: it is the response-policy
-contract that repairs the verifier's release blockers.
+## Known gaps / next steps
+
+No product or release-blocking gaps remain. If a fully clean Lighthouse CLI
+exit is required for archival evidence, rerun it in an environment where the
+Chromium full-page artifact collector does not crash; the generated report's
+scores and all functional, Axe, offline, policy, and live checks passed.
